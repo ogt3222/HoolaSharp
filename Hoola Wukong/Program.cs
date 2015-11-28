@@ -42,6 +42,9 @@ namespace HoolaWukong
         private static bool JQ => Menu.Item("JQ").GetValue<bool>();
         private static bool JE => Menu.Item("JE").GetValue<bool>();
         private static bool JI => Menu.Item("JI").GetValue<bool>();
+        private static bool HQ => Menu.Item("HQ").GetValue<bool>();
+        private static bool HE => Menu.Item("HE").GetValue<bool>();
+        private static bool HI => Menu.Item("HI").GetValue<bool>();
         private static bool Dind => Menu.Item("Dind").GetValue<bool>();
         private static bool DrawE => Menu.Item("DrawE").GetValue<bool>();
         private static bool DrawAlwaysR => Menu.Item("DrawAlwaysR").GetValue<bool>();
@@ -88,7 +91,7 @@ namespace HoolaWukong
             {
                 Orbwalking.LastAATick = 0;
             }
-            if (args.Slot == SpellSlot.E && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+            if (args.Slot == SpellSlot.E)
             {
                 CastYoumoo();
             }
@@ -108,6 +111,14 @@ namespace HoolaWukong
             Combo.AddItem(new MenuItem("AlwaysR", "Force Use R (Toggle)").SetValue(new KeyBind('G', KeyBindType.Toggle)));
 
             Menu.AddSubMenu(Combo);
+
+            var Harass = new Menu("Harass", "Harass");
+
+            Harass.AddItem(new MenuItem("HQ", "Use Q").SetValue(true));
+            Harass.AddItem(new MenuItem("HE", "Use E").SetValue(true));
+            Harass.AddItem(new MenuItem("HI", "Use Hydra").SetValue(true));
+
+            Menu.AddSubMenu(Harass);
 
             var Jungle = new Menu("JungleClear", "JungleClear");
 
@@ -180,8 +191,7 @@ namespace HoolaWukong
                 var target = (Obj_AI_Base) args.Target;
                 if (!target.IsValidTarget(300 + Player.BoundingRadius) || target == null) return;
 
-                if (target is Obj_AI_Hero && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo ||
-                    Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+                if (target is Obj_AI_Hero && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
                 {
                     if (HasTitan()) CastTitan();
                     else if (!HasTitan())
@@ -189,6 +199,16 @@ namespace HoolaWukong
                         if (E.IsReady()) E.Cast(target);
                         if (Q.IsReady()) Q.Cast();
                         if (Items.CanUseItem(Item) && Items.HasItem(Item)) Items.UseItem(Item);
+                    }
+                }
+                if (target is Obj_AI_Hero && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+                {
+                    if (HasTitan()) CastTitan();
+                    else if (!HasTitan())
+                    {
+                        if (E.IsReady() && HE) E.Cast(target);
+                        if (Q.IsReady() && HQ) Q.Cast();
+                        if (Items.CanUseItem(Item) && Items.HasItem(Item) && HI) Items.UseItem(Item);
                     }
                 }
             }
