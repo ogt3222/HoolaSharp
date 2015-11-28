@@ -63,9 +63,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="common\Damage.cs" />
-    <Compile Include="common\Orbwalk.cs" />
     <Compile Include="HpBarIndicator.cs" />
+    <Compile Include="Orbwalk.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

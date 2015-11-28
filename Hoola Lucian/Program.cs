@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Windows.Forms.VisualStyles;
 using LeagueSharp;
 using LeagueSharp.Common;
@@ -18,36 +19,35 @@ namespace HoolaLucian
         private static Obj_AI_Hero Player = ObjectManager.Player;
         private static HpBarIndicator Indicator = new HpBarIndicator();
         private static Spell Q, Q1, W, E, R;
-        private static bool rstate;
         private static bool AAPassive;
-        private static bool HEXQ { get { return Menu.Item("HEXQ").GetValue<bool>(); } }
-        private static bool KillstealQ { get { return Menu.Item("KillstealQ").GetValue<bool>(); } }
-        private static bool CQ { get { return Menu.Item("CQ").GetValue<bool>(); } }
-        private static bool CW { get { return Menu.Item("CW").GetValue<bool>(); } }
-        private static int CE { get { return Menu.Item("CE").GetValue<StringList>().SelectedIndex; } }
-        private static bool HQ { get { return Menu.Item("HQ").GetValue<bool>(); } }
-        private static bool HW { get { return Menu.Item("HW").GetValue<bool>(); } }
-        private static int HE { get { return Menu.Item("HE").GetValue<StringList>().SelectedIndex; } }
-        private static int HMinMana { get { return Menu.Item("HMinMana").GetValue<Slider>().Value; } }
-        private static bool JQ { get { return Menu.Item("JQ").GetValue<bool>(); } }
-        private static bool JW { get { return Menu.Item("JW").GetValue<bool>(); } }
-        private static bool JE { get { return Menu.Item("JE").GetValue<bool>(); } }
-        private static bool LHQ { get { return Menu.Item("LHQ").GetValue<bool>(); } }
-        private static bool LQ { get { return Menu.Item("LQ").GetValue<bool>(); } }
-        private static bool LW { get { return Menu.Item("LW").GetValue<bool>(); } }
-        private static bool LE { get { return Menu.Item("LE").GetValue<bool>(); } }
-        private static int LMinMana { get { return Menu.Item("LMinMana").GetValue<Slider>().Value; } }
-        private static bool Dind { get { return Menu.Item("Dind").GetValue<bool>(); } }
-        private static bool DEQ { get { return Menu.Item("DEQ").GetValue<bool>(); } }
-        private static bool DQ { get { return Menu.Item("DQ").GetValue<bool>(); } }
-        private static bool DW { get { return Menu.Item("DW").GetValue<bool>(); } }
-        private static bool DE { get { return Menu.Item("DE").GetValue<bool>(); } }
-        static bool AutoQ { get { return Menu.Item("AutoQ").GetValue<KeyBind>().Active; } }
-        private static int MinMana { get { return Menu.Item("MinMana").GetValue<Slider>().Value; } }
-        private static int HHMinMana { get { return Menu.Item("HHMinMana").GetValue<Slider>().Value; } }
-        private static int Humanizer { get { return Menu.Item("Humanizer").GetValue<Slider>().Value; } }
-        static bool ForceR { get { return Menu.Item("ForceR").GetValue<KeyBind>().Active; } }
-        static bool LT { get { return Menu.Item("LT").GetValue<KeyBind>().Active; } }
+        private static bool HEXQ => Menu.Item("HEXQ").GetValue<bool>();
+        private static bool KillstealQ => Menu.Item("KillstealQ").GetValue<bool>();
+        private static bool CQ => Menu.Item("CQ").GetValue<bool>();
+        private static bool CW => Menu.Item("CW").GetValue<bool>();
+        private static int CE => Menu.Item("CE").GetValue<StringList>().SelectedIndex;
+        private static bool HQ => Menu.Item("HQ").GetValue<bool>();
+        private static bool HW => Menu.Item("HW").GetValue<bool>();
+        private static int HE => Menu.Item("HE").GetValue<StringList>().SelectedIndex;
+        private static int HMinMana => Menu.Item("HMinMana").GetValue<Slider>().Value;
+        private static bool JQ => Menu.Item("JQ").GetValue<bool>();
+        private static bool JW => Menu.Item("JW").GetValue<bool>();
+        private static bool JE => Menu.Item("JE").GetValue<bool>();
+        private static bool LHQ => Menu.Item("LHQ").GetValue<bool>();
+        private static int LQ => Menu.Item("LQ").GetValue<Slider>().Value;
+        private static bool LW => Menu.Item("LW").GetValue<bool>();
+        private static bool LE => Menu.Item("LE").GetValue<bool>();
+        private static int LMinMana => Menu.Item("LMinMana").GetValue<Slider>().Value;
+        private static bool Dind => Menu.Item("Dind").GetValue<bool>();
+        private static bool DEQ => Menu.Item("DEQ").GetValue<bool>();
+        private static bool DQ => Menu.Item("DQ").GetValue<bool>();
+        private static bool DW => Menu.Item("DW").GetValue<bool>();
+        private static bool DE => Menu.Item("DE").GetValue<bool>();
+        static bool AutoQ => Menu.Item("AutoQ").GetValue<KeyBind>().Active;
+        private static int MinMana => Menu.Item("MinMana").GetValue<Slider>().Value;
+        private static int HHMinMana => Menu.Item("HHMinMana").GetValue<Slider>().Value;
+        private static int Humanizer => Menu.Item("Humanizer").GetValue<Slider>().Value;
+        static bool ForceR => Menu.Item("ForceR").GetValue<KeyBind>().Active;
+        static bool LT => Menu.Item("LT").GetValue<KeyBind>().Active;
 
         static void Main()
         {
@@ -59,7 +59,7 @@ namespace HoolaLucian
             if (Player.ChampionName != "Lucian") return;
             Game.PrintChat("Hoola Lucian - Loaded Successfully, Good Luck! :)");
             Q = new Spell(SpellSlot.Q, 675);
-            Q1 = new Spell(SpellSlot.Q, 1100);
+            Q1 = new Spell(SpellSlot.Q, 1200);
             W = new Spell(SpellSlot.W, 1200, TargetSelector.DamageType.Magical);
             E = new Spell(SpellSlot.E, 475f);
             R = new Spell(SpellSlot.R, 1400);
@@ -67,7 +67,7 @@ namespace HoolaLucian
             OnMenuLoad();
 
             Q.SetTargetted(0.25f, 1400f);
-            Q1.SetSkillshot(0.5f, 65, float.MaxValue, false, SkillshotType.SkillshotLine);
+            Q1.SetSkillshot(0.5f, 50, float.MaxValue, false, SkillshotType.SkillshotLine);
             W.SetSkillshot(0.30f, 80f, 1600f, true, SkillshotType.SkillshotLine);
             R.SetSkillshot(0.2f, 110f, 2500, true, SkillshotType.SkillshotLine);
 
@@ -97,7 +97,7 @@ namespace HoolaLucian
             Menu.AddSubMenu(Combo);
 
             var Misc = new Menu("Misc", "Misc");
-            Misc.AddItem(new MenuItem("Humanizer", "Humanizer Delay").SetValue(new Slider(300,5,300)));
+            Misc.AddItem(new MenuItem("Humanizer", "Humanizer Delay").SetValue(new Slider(5,5,300)));
             Misc.AddItem(new MenuItem("Nocolision", "Nocolision W").SetValue(true));
             Menu.AddSubMenu(Misc);
 
@@ -114,7 +114,7 @@ namespace HoolaLucian
             var LC = new Menu("LaneClear", "LaneClear");
             LC.AddItem(new MenuItem("LT", "Use Spell LaneClear (Toggle)").SetValue(new KeyBind('J', KeyBindType.Toggle)));
             LC.AddItem(new MenuItem("LHQ", "Use Extended Q For Harass").SetValue(true));
-            LC.AddItem(new MenuItem("LQ", "Use Q").SetValue(true));
+            LC.AddItem(new MenuItem("LQ", "Use Q (0 = Don't)").SetValue(new Slider(0,0,5)));
             LC.AddItem(new MenuItem("LW", "Use W").SetValue(true));
             LC.AddItem(new MenuItem("LE", "Use E").SetValue(true));
             LC.AddItem(new MenuItem("LMinMana", "Min Mana (%)").SetValue(new Slider(80)));
@@ -192,7 +192,7 @@ namespace HoolaLucian
                 var targets = HeroManager.Enemies.Where(x => x.IsValidTarget(Q.Range) && !x.IsZombie);
                 foreach (var target in targets)
                 {
-                    if (target.Health < Q.GetDamage2(target) && (!target.HasBuff("kindrednodeathbuff") && !target.HasBuff("Undying Rage") && !target.HasBuff("JudicatorIntervention")))
+                    if (target.Health < Q.GetDamage(target) && (!target.HasBuff("kindrednodeathbuff") && !target.HasBuff("Undying Rage") && !target.HasBuff("JudicatorIntervention")))
                         Q.Cast(target);
                 }
             }
@@ -210,8 +210,21 @@ namespace HoolaLucian
                         if (!LT) return;
 
                         if (E.IsReady() && !AAPassive && LE) E.Cast(Player.Position.Extend(Game.CursorPos, 70));
-                        if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && !LE)) && LQ && !AAPassive) Q.Cast(Minions[0]);
-                        if ((!E.IsReady() || (E.IsReady() && !LE)) && (!Q.IsReady() || (Q.IsReady() && !LQ)) && LW && W.IsReady() && !AAPassive) W.Cast(Minions[0].Position);
+                        if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && !LE)) && LQ != 0 && !AAPassive)
+                        {
+                            var QMinions = MinionManager.GetMinions(Q.Range);
+                            var exminions = MinionManager.GetMinions(Q1.Range);
+                            foreach (var Minion in QMinions)
+                            {
+                                var QHit = new Geometry.Polygon.Rectangle(Player.Position,Player.Position.Extend(Minion.Position, Q1.Range),Q1.Width);
+                                if (exminions.Count(x => !QHit.IsOutside(x.Position.To2D())) >= LQ)
+                                {
+                                    Q.Cast(Minion);
+                                    break;
+                                }
+                            }
+                        }
+                        if ((!E.IsReady() || (E.IsReady() && !LE)) && (!Q.IsReady() || (Q.IsReady() && LQ == 0)) && LW && W.IsReady() && !AAPassive) W.Cast(Minions[0].Position);
                     }
                 }
             }
@@ -221,8 +234,8 @@ namespace HoolaLucian
             angle *= Math.PI / 180.0;
             Vector2 temp = Vector2.Subtract(point2, point1);
             Vector2 result = new Vector2(0);
-            result.X = (float)(temp.X * Math.Cos(angle) - temp.Y * Math.Sin(angle)) / 9;
-            result.Y = (float)(temp.X * Math.Sin(angle) + temp.Y * Math.Cos(angle)) / 9;
+            result.X = (float)(temp.X * Math.Cos(angle) - temp.Y * Math.Sin(angle)) / 4;
+            result.Y = (float)(temp.X * Math.Sin(angle) + temp.Y * Math.Cos(angle)) / 4;
             result = Vector2.Add(result, point1);
             return result;
         }
@@ -267,50 +280,42 @@ namespace HoolaLucian
             }
         }
 
-        static void Harass()
+        private static void Harass()
         {
             if (Player.ManaPercent < HMinMana) return;
 
             if (Q.IsReady() && HEXQ)
             {
-                var t1 = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
-                if (t1.IsValidTarget(Q1.Range) && Player.Distance(t1.ServerPosition) > Q.Range + 100)
+                var target = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
+                var Minions = MinionManager.GetMinions(Q.Range);
+                foreach (var Minion in Minions)
                 {
-                    var qpred = Q.GetPrediction(t1, true);
-                    var distance = Player.Distance(qpred.CastPosition);
-                    var minions = MinionManager.GetMinions(Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.MaxHealth);
-
-                    foreach (var minion in minions.Where(minion => minion.IsValidTarget(Q.Range)))
+                    var QHit = new Geometry.Polygon.Rectangle(Player.Position, Player.Position.Extend(Minion.Position, Q1.Range),Q1.Width);
+                    var QPred = Q1.GetPrediction(target);
+                    if (!QHit.IsOutside(QPred.UnitPosition.To2D()) && QPred.Hitchance == HitChance.High)
                     {
-                        if (qpred.CastPosition.Distance(Player.Position.Extend(minion.Position, distance)) < 25)
-                        {
-                            Q.Cast(minion);
-                            return;
-                        }
+                        Q.Cast(Minion);
+                        break;
                     }
                 }
             }
         }
         static void LaneClear()
         {
-            if (Player.ManaPercent < LMinMana)
+            if (Player.ManaPercent < LMinMana) return;
 
             if (Q.IsReady() && LHQ)
             {
-                var t1 = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
-                if (t1.IsValidTarget(Q1.Range) && Player.Distance(t1.ServerPosition) > Q.Range + 100)
+                var extarget = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
+                var Minions = MinionManager.GetMinions(Q.Range);
+                foreach (var Minion in Minions)
                 {
-                    var qpred = Q.GetPrediction(t1, true);
-                    var distance = Player.Distance(qpred.CastPosition);
-                    var minions = MinionManager.GetMinions(Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.MaxHealth);
-
-                    foreach (var minion in minions.Where(minion => minion.IsValidTarget(Q.Range)))
+                    var QHit = new Geometry.Polygon.Rectangle(Player.Position, Player.Position.Extend(Minion.Position, Q1.Range), Q1.Width);
+                    var QPred = Q1.GetPrediction(extarget);
+                    if (!QHit.IsOutside(QPred.UnitPosition.To2D()) && QPred.Hitchance == HitChance.High)
                     {
-                        if (qpred.CastPosition.Distance(Player.Position.Extend(minion.Position, distance)) < 25)
-                        {
-                            Q.Cast(minion);
-                            return;
-                        }
+                        Q.Cast(Minion);
+                        break;
                     }
                 }
             }
@@ -319,20 +324,16 @@ namespace HoolaLucian
         {
             if (Q.IsReady() && AutoQ && Player.ManaPercent > MinMana)
             {
-                var t1 = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
-                if (t1.IsValidTarget(Q1.Range) && Player.Distance(t1.ServerPosition) > Q.Range + 100)
+                var extarget = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
+                var Minions = MinionManager.GetMinions(Q.Range);
+                foreach (var Minion in Minions)
                 {
-                    var qpred = Q.GetPrediction(t1, true);
-                    var distance = Player.Distance(qpred.CastPosition);
-                    var minions = MinionManager.GetMinions(Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.MaxHealth);
-
-                    foreach (var minion in minions.Where(minion => minion.IsValidTarget(Q.Range)))
+                    var QHit = new Geometry.Polygon.Rectangle(Player.Position, Player.Position.Extend(Minion.Position, Q1.Range), Q1.Width);
+                    var QPred = Q1.GetPrediction(extarget);
+                    if (!QHit.IsOutside(QPred.UnitPosition.To2D()) && QPred.Hitchance == HitChance.High)
                     {
-                        if (qpred.CastPosition.Distance(Player.Position.Extend(minion.Position, distance)) < 25)
-                        {
-                            Q.Cast(minion);
-                            return;
-                        }
+                        Q.Cast(Minion);
+                        break;
                     }
                 }
             }
@@ -341,11 +342,10 @@ namespace HoolaLucian
         static void UseRTarget()
         {
             var target = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Physical);
-            if (ForceR && !rstate && R.IsReady() && target.IsValid && target is Obj_AI_Hero) R.Cast(target.Position);
+            if (ForceR && R.IsReady() && target.IsValid && target is Obj_AI_Hero && !Player.HasBuff("LucianR")) R.Cast(target.Position);
         }
         static void Game_OnUpdate(EventArgs args)
         {
-            if (!R.IsReady(10000) && rstate) rstate = false;
             W.Collision = Menu.Item("Nocolision").GetValue<bool>();
             AutoUseQ();
 
@@ -356,33 +356,23 @@ namespace HoolaLucian
         }
         static void Spellbook_OnCastSpell(Spellbook sender, SpellbookCastSpellEventArgs args)
         {
-            if (args.Slot == SpellSlot.Q || args.Slot == SpellSlot.W || args.Slot == SpellSlot.E)
-            {
-                AAPassive = true;
-            }
-            if (args.Slot == SpellSlot.E)
-            {
-                Orbwalking.ResetAutoAttackTimer();
-            }
-            if (args.Slot == SpellSlot.R)
-            {
-                rstate = true;
-                ItemData.Youmuus_Ghostblade.GetItem().Cast();
-            }
+            if (args.Slot == SpellSlot.Q || args.Slot == SpellSlot.W || args.Slot == SpellSlot.E) AAPassive = true;
+            if (args.Slot == SpellSlot.E) Orbwalking.ResetAutoAttackTimer();
+            if (args.Slot == SpellSlot.R) ItemData.Youmuus_Ghostblade.GetItem().Cast();
         }
 
-        static float getComboDamage2(Obj_AI_Base enemy)
+        static float getComboDamage(Obj_AI_Base enemy)
         {
             if (enemy != null)
             {
                 float damage = 0;
-                if (E.IsReady()) damage = damage + (float)Player.GetAutoAttackDamage2(enemy) * 2;
-                if (W.IsReady()) damage = damage + W.GetDamage2(enemy) + (float)Player.GetAutoAttackDamage2(enemy);
+                if (E.IsReady()) damage = damage + (float)Player.GetAutoAttackDamage(enemy) * 2;
+                if (W.IsReady()) damage = damage + W.GetDamage(enemy) + (float)Player.GetAutoAttackDamage(enemy);
                 if (Q.IsReady())
                 {
-                    damage = damage + Q.GetDamage2(enemy) + (float)Player.GetAutoAttackDamage2(enemy);
+                    damage = damage + Q.GetDamage(enemy) + (float)Player.GetAutoAttackDamage(enemy);
                 }
-                damage = damage + (float)Player.GetAutoAttackDamage2(enemy);
+                damage = damage + (float)Player.GetAutoAttackDamage(enemy);
 
                 return damage;
             }
@@ -406,7 +396,7 @@ namespace HoolaLucian
                             .Where(ene => ene.IsValidTarget() && !ene.IsZombie))
                 {
                     Indicator.unit = enemy;
-                    Indicator.drawDmg(getComboDamage2(enemy), new ColorBGRA(255, 204, 0, 160));
+                    Indicator.drawDmg(getComboDamage(enemy), new ColorBGRA(255, 204, 0, 160));
 
                 }
             }

@@ -25,10 +25,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using SharpDX;
-using Color = System.Drawing.Color;
 using LeagueSharp;
 using LeagueSharp.Common;
+using SharpDX;
+using Color = System.Drawing.Color;
+
 #endregion
 
 namespace HoolaLucian
@@ -39,22 +40,6 @@ namespace HoolaLucian
     /// </summary>
     public static class Orbwalking
     {
-        internal static bool HasBuff2(this Obj_AI_Base unit,
-            string buffName,
-            bool dontUseDisplayName = false)
-        {
-            return
-                unit.Buffs.Any(
-                    buff =>
-                        ((dontUseDisplayName &&
-                          String.Equals(buff.Name, buffName, StringComparison.CurrentCultureIgnoreCase)) ||
-                         (!dontUseDisplayName &&
-                          String.Equals(buff.DisplayName, buffName, StringComparison.CurrentCultureIgnoreCase))) &&
-                        buff.IsValidBuff());
-        }
-
-        public delegate void BeforeAttackEvenH(BeforeAttackEventArgs args);
-
         public delegate void OnAttackEvenH(AttackableUnit unit, AttackableUnit target);
 
         public delegate void OnNonKillableMinionH(AttackableUnit minion);
@@ -68,7 +53,7 @@ namespace HoolaLucian
             Combo,
             None
         }
-
+        
 
         //Spells that are not attacks even if they have the "attack" word in their name.
         private static readonly string[] NoAttacks =
@@ -100,14 +85,9 @@ namespace HoolaLucian
         // Champs whose auto attacks can't be cancelled
         public static int LastAATick;
         public static bool Attack = true;
-        public static bool DisableNextAttack;
         public static bool Move = true;
-        public static int LastMoveCommandT;
-        public static Vector3 LastMoveCommandPosition = Vector3.Zero;
         private static AttackableUnit _lastTarget;
         private static readonly Obj_AI_Hero Player;
-        private static float _minDistance = 400;
-        private static readonly Random _random = new Random(DateTime.Now.Millisecond);
 
         static Orbwalking()
         {
@@ -115,17 +95,11 @@ namespace HoolaLucian
             Obj_AI_Base.OnProcessSpellCast += OnProcessSpell;
             Spellbook.OnStopCast += SpellbookOnStopCast;
         }
-
-        /// <summary>
-        ///     This event is fired before the player auto attacks.
-        /// </summary>
-        public static event BeforeAttackEvenH BeforeAttack;
-
         /// <summary>
         ///     This event is fired when a unit is about to auto-attack another unit.
         /// </summary>
         public static event OnAttackEvenH OnAttack;
-
+        
         /// <summary>
         ///     Gets called on target changes
         /// </summary>
@@ -135,25 +109,10 @@ namespace HoolaLucian
         //      Gets called if you can't kill a minion with auto attacks
         //  </summary>
         public static event OnNonKillableMinionH OnNonKillableMinion;
-
-        private static void FireBeforeAttack(AttackableUnit target)
-        {
-            if (BeforeAttack != null)
-            {
-                BeforeAttack(new BeforeAttackEventArgs { Target = target });
-            }
-            else
-            {
-                DisableNextAttack = false;
-            }
-        }
-
+        
         private static void FireOnAttack(AttackableUnit unit, AttackableUnit target)
         {
-            if (OnAttack != null)
-            {
-                OnAttack(unit, target);
-            }
+            OnAttack?.Invoke(unit, target);
         }
 
 
@@ -167,20 +126,14 @@ namespace HoolaLucian
 
         private static void FireOnNonKillableMinion(AttackableUnit minion)
         {
-            if (OnNonKillableMinion != null)
-            {
-                OnNonKillableMinion(minion);
-            }
+            OnNonKillableMinion?.Invoke(minion);
         }
 
         /// <summary>
         ///     Returns true if the spellname is an auto-attack.
         /// </summary>
-        public static bool IsAutoAttack(string name)
-        {
-            return (name.ToLower().Contains("attack") && !NoAttacks.Contains(name.ToLower())) ||
+        public static bool IsAutoAttack(string name) => (name.ToLower().Contains("attack") && !NoAttacks.Contains(name.ToLower())) ||
                    Attacks.Contains(name.ToLower());
-        }
 
         /// <summary>
         ///     Returns the auto-attack range of local player with respect to the target.
@@ -216,144 +169,29 @@ namespace HoolaLucian
             var myRange = GetRealAutoAttackRange(target);
             return
                 Vector2.DistanceSquared(
-                    (target is Obj_AI_Base) ? ((Obj_AI_Base)target).ServerPosition.To2D() : target.Position.To2D(),
+                    (target as Obj_AI_Base)?.ServerPosition.To2D() ?? target.Position.To2D(),
                     Player.ServerPosition.To2D()) <= myRange * myRange;
         }
-
+        
 
         /// <summary>
         ///     Returns if the player's auto-attack is ready.
         /// </summary>
-        public static bool CanAttack()
-        {
-            return Utils.GameTimeTickCount >= LastAATick + Player.AttackDelay * 1000 && Attack;
-        }
+        public static bool CanAttack => Utils.GameTimeTickCount >= LastAATick + (Player.AttackDelay * 1000) && Attack;
 
         /// <summary>
         ///     Returns true if moving won't cancel the auto-attack.
         /// </summary>
-        public static bool CanMove(float extraWindup)
-        {
-            if (!Move)
-            {
-                return false;
-            }
-
-            return (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 980 + extraWindup);
-        }
-
-
-        public static void SetMinimumOrbwalkDistance(float d)
-        {
-            _minDistance = d;
-        }
-
-        public static float GetLastMoveTime()
-        {
-            return LastMoveCommandT;
-        }
-
-        public static Vector3 GetLastMovePosition()
-        {
-            return LastMoveCommandPosition;
-        }
-
-        public static void MoveTo(Vector3 position,
-            float holdAreaRadius = 0,
-            bool overrideTimer = false,
-            bool useFixedDistance = true,
-            bool randomizeMinDistance = true)
-        {
-            var playerPosition = Player.ServerPosition;
-
-            if (playerPosition.Distance(position, true) < holdAreaRadius * holdAreaRadius)
-            {
-                if (Player.Path.Length > 0)
-                {
-                    Player.IssueOrder(GameObjectOrder.Stop, playerPosition);
-                    LastMoveCommandPosition = playerPosition;
-                    LastMoveCommandT = Utils.GameTimeTickCount - 70;
-                }
-                return;
-            }
-
-            var point = position;
-
-            if (Player.Distance(point, true) < 150 * 150)
-            {
-                point = playerPosition.Extend(position, (randomizeMinDistance ? (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance : _minDistance));
-            }
-            var angle = 0f;
-            var currentPath = Player.GetWaypoints();
-            if (currentPath.Count > 1 && currentPath.PathLength() > 100)
-            {
-                var movePath = Player.GetPath(point);
-
-                if (movePath.Length > 1)
-                {
-                    var v1 = currentPath[1] - currentPath[0];
-                    var v2 = movePath[1] - movePath[0];
-                    angle = v1.AngleBetween(v2.To2D());
-                    var distance = movePath.Last().To2D().Distance(currentPath.Last(), true);
-
-                    if ((angle < 10 && distance < 500 * 500) || distance < 50 * 50)
-                    {
-                        return;
-                    }
-                }
-            }
-
-            if (Utils.GameTimeTickCount - LastMoveCommandT < (70 + Math.Min(60, Game.Ping)) && !overrideTimer && angle < 60)
-            {
-                return;
-            }
-
-            if (angle >= 60 && Utils.GameTimeTickCount - LastMoveCommandT < 60)
-            {
-                return;
-            }
-
-            Player.IssueOrder(GameObjectOrder.MoveTo, point);
-            LastMoveCommandPosition = point;
-            LastMoveCommandT = Utils.GameTimeTickCount;
-        }
-
+        public static bool CanMove(double extraWindup) => Move && !Player.IsWindingUp && (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 970 + extraWindup);
+        
         /// <summary>
         ///     Orbwalk a target while moving to Position.
         /// </summary>
-        public static void Orbwalk(AttackableUnit target,
-            Vector3 position,
-            float extraMoveup = 5,
-            float holdAreaRadius = 0,
-            bool useFixedDistance = true,
-            bool randomizeMinDistance = true)
-        {
-            if (target.IsValidTarget() && CanAttack() && Attack)
-            {
-                DisableNextAttack = false;
-                FireBeforeAttack(target);
-
-                if (!DisableNextAttack)
-                {
-                    Player.IssueOrder(GameObjectOrder.AttackUnit, target);
-                    _lastTarget = target;
-                    return;
-                }
-            }
-
-            if (CanMove(extraMoveup) && Move)
-            {
-                MoveTo(position, holdAreaRadius, false, useFixedDistance, randomizeMinDistance);
-            }
-        }
 
         /// <summary>
         ///     Resets the Auto-Attack timer.
         /// </summary>
-        public static void ResetAutoAttackTimer()
-        {
-            LastAATick = 0;
-        }
+        public static void ResetAutoAttackTimer() => LastAATick = 0;
 
         private static void SpellbookOnStopCast(Spellbook spellbook, SpellbookStopCastEventArgs args)
         {
@@ -362,7 +200,7 @@ namespace HoolaLucian
                 ResetAutoAttackTimer();
             }
         }
-
+        
         private static void OnProcessSpell(Obj_AI_Base unit, GameObjectProcessSpellCastEventArgs Spell)
         {
             var spellName = Spell.SData.Name;
@@ -389,23 +227,6 @@ namespace HoolaLucian
             }
 
             FireOnAttack(unit, _lastTarget);
-        }
-
-        public class BeforeAttackEventArgs
-        {
-            private bool _process = true;
-            public AttackableUnit Target;
-            public Obj_AI_Base Unit = ObjectManager.Player;
-
-            public bool Process
-            {
-                get { return _process; }
-                set
-                {
-                    DisableNextAttack = !value;
-                    _process = value;
-                }
-            }
         }
 
         /// <summary>
@@ -451,12 +272,13 @@ namespace HoolaLucian
                 misc.AddItem(new MenuItem("AttackPetsnTraps", "Auto attack pets & traps").SetShared().SetValue(true));
                 misc.AddItem(new MenuItem("Smallminionsprio", "Jungle clear small first").SetShared().SetValue(false));
                 _config.AddSubMenu(misc);
-
+                
                 _config.AddItem(
                     new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(50, 0, 100)));
 
 
                 /*Load the menu*/
+
                 _config.AddItem(
                     new MenuItem("LastHit", "Last hit").SetValue(new KeyBind('X', KeyBindType.Press)));
 
@@ -476,11 +298,8 @@ namespace HoolaLucian
                 Instances.Add(this);
             }
 
-            public virtual bool InAutoAttackRange(AttackableUnit target)
-            {
-                return Orbwalking.InAutoAttackRange(target);
-            }
-
+            public virtual bool InAutoAttackRange(AttackableUnit target)=> Orbwalking.InAutoAttackRange(target);
+            
             public OrbwalkingMode ActiveMode
             {
                 get
@@ -494,7 +313,7 @@ namespace HoolaLucian
                     {
                         return OrbwalkingMode.Combo;
                     }
-
+                    
                     if (_config.Item("LaneClear").GetValue<KeyBind>().Active)
                     {
                         return OrbwalkingMode.LaneClear;
@@ -509,7 +328,7 @@ namespace HoolaLucian
                     {
                         return OrbwalkingMode.LastHit;
                     }
-
+                    
                     return OrbwalkingMode.None;
                 }
                 set { _mode = value; }
@@ -554,7 +373,7 @@ namespace HoolaLucian
                         .Any(
                             minion =>
                                 minion.IsValidTarget() && minion.Team != GameObjectTeam.Neutral &&
-                                InAutoAttackRange(minion) && MinionManager.IsMinion(minion, false) &&
+                                InAutoAttackRange(minion) && MinionManager.IsMinion(minion) &&
                                 HealthPrediction.LaneClearHealthPrediction(
                                     minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), 0) <=
                                 Player.GetAutoAttackDamage(minion));
@@ -591,7 +410,7 @@ namespace HoolaLucian
                     foreach (var minion in MinionList)
                     {
                         var t = (int)(Player.AttackCastDelay * 1000) - 100 +
-                                1000 * (int)Math.Max(0, Player.Distance(minion) - Player.BoundingRadius) / (int)Player.BasicAttack.MissileSpeed;
+                                1000 * (int)Math.Max(0, Player.Distance(minion) - Player.BoundingRadius) / int.MaxValue;
                         var predHealth = HealthPrediction.GetHealthPrediction(minion, t, 0);
 
                         if (minion.Team != GameObjectTeam.Neutral && (_config.Item("AttackPetsnTraps").GetValue<bool>() || MinionManager.IsMinion(minion, _config.Item("AttackWards").GetValue<bool>())))
@@ -641,7 +460,7 @@ namespace HoolaLucian
                 }
 
                 /*Champions*/
-                if (ActiveMode != OrbwalkingMode.LastHit)
+                if (ActiveMode != OrbwalkingMode.LastHit && !Player.HasBuff("LucianR"))
                 {
                     var target = TargetSelector.GetTarget(-1, TargetSelector.DamageType.Physical);
                     if (target.IsValidTarget() && InAutoAttackRange(target))
@@ -687,7 +506,7 @@ namespace HoolaLucian
                         result = (from minion in
                                       ObjectManager.Get<Obj_AI_Minion>()
                                           .Where(minion => minion.IsValidTarget() && InAutoAttackRange(minion) &&
-                                          (_config.Item("AttackWards").GetValue<bool>() || !MinionManager.IsWard(minion.CharData.BaseSkinName.ToLower())) &&
+                                          (_config.Item("AttackWards").GetValue<bool>() || !MinionManager.IsWard(minion)) &&
                                           (_config.Item("AttackPetsnTraps").GetValue<bool>() && minion.CharData.BaseSkinName != "jarvanivstandard" || MinionManager.IsMinion(minion, _config.Item("AttackWards").GetValue<bool>())) &&
                                           minion.CharData.BaseSkinName != "gangplankbarrel")
                                   let predHealth =
@@ -710,31 +529,17 @@ namespace HoolaLucian
 
             private void GameOnOnGameUpdate(EventArgs args)
             {
-                try
-                {
-                    if (ActiveMode == OrbwalkingMode.None)
-                    {
-                        return;
-                    }
 
-                    //Prevent canceling important spells
-                    if (Player.IsCastingInterruptableSpell(true))
-                    {
-                        return;
-                    }
-
-                    var target = GetTarget();
-                    Orbwalk(
-                        target, (_orbwalkingPoint.To2D().IsValid()) ? _orbwalkingPoint : Game.CursorPos,
-                        _config.Item("ExtraMoveup").GetValue<Slider>().Value,
-                        _config.Item("HoldPosRadius").GetValue<Slider>().Value);
-                }
-                catch (Exception e)
+                if (ActiveMode == OrbwalkingMode.None)
                 {
-                    Console.WriteLine(e);
+                    return;
                 }
+
+                var target = GetTarget();
+                if (target.IsValidTarget() && CanAttack && Attack) Player.IssueOrder(GameObjectOrder.AttackUnit, target);
+                else if (CanMove(_config.Item("ExtraMoveup").GetValue<Slider>().Value) && Move) Player.IssueOrder(GameObjectOrder.MoveTo, (_orbwalkingPoint.To2D().IsValid()) ? _orbwalkingPoint : Game.CursorPos);
             }
-
+            
             private void DrawingOnOnDraw(EventArgs args)
             {
                 if (_config.Item("AACircle").GetValue<Circle>().Active)
