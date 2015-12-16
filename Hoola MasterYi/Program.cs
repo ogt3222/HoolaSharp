@@ -14,35 +14,38 @@ namespace HoolaMasterYi
     {
         private static Menu Menu;
         private static Orbwalking.Orbwalker Orbwalker;
-        private static Obj_AI_Hero Player = ObjectManager.Player;
-        private static HpBarIndicator Indicator = new HpBarIndicator();
+        private static readonly Obj_AI_Hero Player = ObjectManager.Player;
+        private static readonly HpBarIndicator Indicator = new HpBarIndicator();
         private static Spell Q, W, E, R;
-        private static bool KsQ { get { return Menu.Item("KsQ").GetValue<bool>(); } }
-        private static bool KsT { get { return Menu.Item("KsT").GetValue<bool>(); } }
-        private static bool KsB { get { return Menu.Item("KsB").GetValue<bool>(); } }
-        private static bool CQ { get { return Menu.Item("CQ").GetValue<bool>(); } }
-        private static bool CW { get { return Menu.Item("CW").GetValue<bool>(); } }
-        private static bool CE { get { return Menu.Item("CE").GetValue<bool>(); } }
-        private static bool CR { get { return Menu.Item("CR").GetValue<bool>(); } }
-        private static bool CT { get { return Menu.Item("CT").GetValue<bool>(); } }
-        private static bool CY { get { return Menu.Item("CY").GetValue<bool>(); } }
-        private static bool CB { get { return Menu.Item("CB").GetValue<bool>(); } }
-        private static bool HQ { get { return Menu.Item("HQ").GetValue<bool>(); } }
-        private static bool HW { get { return Menu.Item("HW").GetValue<bool>(); } }
-        private static bool HE { get { return Menu.Item("HE").GetValue<bool>(); } }
-        private static bool HT { get { return Menu.Item("HT").GetValue<bool>(); } }
-        private static bool HY { get { return Menu.Item("HY").GetValue<bool>(); } }
-        private static bool HB { get { return Menu.Item("HB").GetValue<bool>(); } }
-        private static bool LW { get { return Menu.Item("LW").GetValue<bool>(); } }
-        private static bool LE { get { return Menu.Item("LE").GetValue<bool>(); } }
-        private static bool LI { get { return Menu.Item("LI").GetValue<bool>(); } }
-        private static bool JQ { get { return Menu.Item("JQ").GetValue<bool>(); } }
-        private static bool JW { get { return Menu.Item("JW").GetValue<bool>(); } }
-        private static bool JE { get { return Menu.Item("JE").GetValue<bool>(); } }
-        private static bool JI { get { return Menu.Item("JI").GetValue<bool>(); } }
-        private static bool AutoY { get { return Menu.Item("AutoY").GetValue<bool>(); } }
-        private static bool DQ { get { return Menu.Item("DQ").GetValue<bool>(); } }
-        private static bool Dind { get { return Menu.Item("Dind").GetValue<bool>(); } }
+        private static bool AutoQ => Menu.Item("AutoQ").GetValue<bool>();
+        private static bool AutoQOnly => Menu.Item("AutoQOnly").GetValue<bool>();
+        private static bool KsQ => Menu.Item("KsQ").GetValue<bool>();
+        private static bool KsT => Menu.Item("KsT").GetValue<bool>();
+        private static bool KsB => Menu.Item("KsB").GetValue<bool>();
+        private static bool CQ => Menu.Item("CQ").GetValue<bool>();
+        private static bool CW => Menu.Item("CW").GetValue<bool>();
+        private static bool CE => Menu.Item("CE").GetValue<bool>();
+        private static bool CR => Menu.Item("CR").GetValue<bool>();
+        private static bool CT => Menu.Item("CT").GetValue<bool>();
+        private static bool CY => Menu.Item("CY").GetValue<bool>();
+        private static bool CB => Menu.Item("CB").GetValue<bool>();
+        private static bool HQ => Menu.Item("HQ").GetValue<bool>();
+        private static bool HW => Menu.Item("HW").GetValue<bool>();
+        private static bool HE => Menu.Item("HE").GetValue<bool>();
+        private static bool HT => Menu.Item("HT").GetValue<bool>();
+        private static bool HY => Menu.Item("HY").GetValue<bool>();
+        private static bool HB => Menu.Item("HB").GetValue<bool>();
+        private static bool LW => Menu.Item("LW").GetValue<bool>();
+        private static bool LE => Menu.Item("LE").GetValue<bool>();
+        private static bool LI => Menu.Item("LI").GetValue<bool>();
+        private static bool JQ => Menu.Item("JQ").GetValue<bool>();
+        private static bool JW => Menu.Item("JW").GetValue<bool>();
+        private static bool JE => Menu.Item("JE").GetValue<bool>();
+        private static bool JI => Menu.Item("JI").GetValue<bool>();
+        private static bool AutoY => Menu.Item("AutoY").GetValue<bool>();
+        private static bool DQ => Menu.Item("DQ").GetValue<bool>();
+        private static bool Dind => Menu.Item("Dind").GetValue<bool>();
+
         static void Main()
         {
             CustomEvents.Game.OnGameLoad += OnGameLoad;
@@ -50,7 +53,6 @@ namespace HoolaMasterYi
 
         static void OnGameLoad(EventArgs args)
         {
-            if (Player.ChampionName != "MasterYi") return;
             Game.PrintChat("Hoola Master Yi - Loaded Successfully, Good Luck! :)");
             Q = new Spell(SpellSlot.Q, 600);
             W = new Spell(SpellSlot.W);
@@ -60,8 +62,9 @@ namespace HoolaMasterYi
             OnMenuLoad();
 
             Q.SetTargetted(0.25f, float.MaxValue);
-            
+
             Game.OnUpdate += Game_OnUpdate;
+            Game.OnUpdate += DetectSpell;
             Drawing.OnEndScene += Drawing_OnEndScene;
             Obj_AI_Base.OnDoCast += OnDoCast;
             Obj_AI_Base.OnPlayAnimation += OnPlay;
@@ -69,7 +72,24 @@ namespace HoolaMasterYi
             Obj_AI_Base.OnDoCast += OnDoCastJC;
             Obj_AI_Base.OnProcessSpellCast += BeforeAttack;
             Obj_AI_Base.OnProcessSpellCast += BeforeAttackJC;
+            Obj_AI_Base.OnProcessSpellCast += DetectBlink;
             Drawing.OnDraw += OnDraw;
+        }
+
+        private static void DetectBlink(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            if (sender.IsMe || args.SData.IsAutoAttack()) return;
+
+            if (Spelldatabase.list.Contains(args.SData.Name.ToLower()) &&
+                (((Player.Distance(args.End) >= Q.Range) && AutoQOnly) || !AutoQOnly) && Q.IsReady() && AutoQ)
+                Q.Cast((Obj_AI_Base)args.Target);
+        }
+
+        private static void DetectSpell(EventArgs args)
+        {
+            var target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
+            if (target.IsDashing() && (((Player.Distance(target.GetWaypoints().Last()) >= Q.Range) && AutoQOnly) || !AutoQOnly) && Q.IsReady() && AutoQ && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+                Q.Cast(target);
         }
 
         static void OnDraw(EventArgs args)
@@ -100,7 +120,7 @@ namespace HoolaMasterYi
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
                 {
                     var Minions = MinionManager.GetMinions(ItemData.Ravenous_Hydra_Melee_Only.Range);
-                    if (Minions[0].IsValid && Minions.Count != 0) if (LE) E.Cast(); 
+                    if (Minions[0].IsValid && Minions.Count != 0) if (LE) E.Cast();
                 }
             }
         }
@@ -108,7 +128,7 @@ namespace HoolaMasterYi
         static void BeforeAttackJC(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
         {
             if (!sender.IsMe || !args.Target.IsValid || !Orbwalking.IsAutoAttack(args.SData.Name)) return;
-            
+
             if (args.Target is Obj_AI_Minion)
             {
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
@@ -124,37 +144,12 @@ namespace HoolaMasterYi
             if (args.Slot == SpellSlot.R && AutoY) CastYoumoo();
         }
 
-        static void WCancel()
-        {
-            var target = Orbwalker.GetTarget();
-            Orbwalking.LastAATick = 0;
-            if (Orbwalking.InAutoAttackRange(target)) Utility.DelayAction.Add(10,()=>Player.IssueOrder(GameObjectOrder.AttackUnit, Orbwalker.GetTarget()));
-            else Utility.DelayAction.Add(10,()=>Player.IssueOrder(GameObjectOrder.MoveTo, Player.Position.Extend(Game.CursorPos, 50)));
-        }
-
         private static void OnPlay(Obj_AI_Base Sender, GameObjectPlayAnimationEventArgs args)
         {
             if (!Sender.IsMe) return;
             if (args.Animation.Contains("Spell2"))
             {
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && CW)
-                {
-                    WCancel();
-                }
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && HW)
-                {
-                    WCancel();
-                }
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && LW)
-                {
-                    var Minions = MinionManager.GetMinions(Player.AttackRange);
-                    if (Minions.Count != 0 && Minions[0].IsValid) WCancel();
-                }
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && JW)
-                {
-                    var Mobs = MinionManager.GetMinions(Player.AttackRange, MinionTypes.All, MinionTeam.Neutral);
-                    if (Mobs.Count != 0 && Mobs[0].IsValid) WCancel();
-                }
+                Orbwalking.LastAATick = 0;
             }
         }
 
@@ -162,8 +157,8 @@ namespace HoolaMasterYi
         {
             for (int i = 0; i < t; i = i + 1)
             {
-                if (HasItem())
-                    Utility.DelayAction.Add(i, () => CastItem());
+                if (HasItem)
+                    Utility.DelayAction.Add(i, CastItem);
             }
         }
         static void CastItem()
@@ -186,15 +181,8 @@ namespace HoolaMasterYi
             if (ItemData.Bilgewater_Cutlass.GetItem().IsReady())
                 ItemData.Bilgewater_Cutlass.GetItem().Cast(target);
         }
-        static bool HasItem()
-        {
-            if (ItemData.Tiamat_Melee_Only.GetItem().IsReady() || ItemData.Ravenous_Hydra_Melee_Only.GetItem().IsReady())
-            {
-                return true;
-            }
-            return false;
-        }
-        
+        static bool HasItem => (ItemData.Tiamat_Melee_Only.GetItem().IsReady() || ItemData.Ravenous_Hydra_Melee_Only.GetItem().IsReady());
+
 
         private static void OnDoCast(Obj_AI_Base Sender, GameObjectProcessSpellCastEventArgs args)
         {
@@ -233,7 +221,7 @@ namespace HoolaMasterYi
         private static void OnDoCastJC(Obj_AI_Base Sender, GameObjectProcessSpellCastEventArgs args)
         {
             if (!Sender.IsMe || !args.Target.IsValid && !Orbwalking.IsAutoAttack(args.SData.Name)) return;
-            
+
             if (args.Target is Obj_AI_Minion && args.Target.IsValid)
             {
                 var Mobs = MinionManager.GetMinions(ItemData.Ravenous_Hydra_Melee_Only.Range, MinionTypes.All, MinionTeam.Neutral);
@@ -309,6 +297,8 @@ namespace HoolaMasterYi
             Menu.AddSubMenu(Draw);
 
             var Misc = new Menu("Misc", "Misc");
+            Misc.AddItem(new MenuItem("AutoQ", "Q Follow Dashing Target").SetValue(true));
+            Misc.AddItem(new MenuItem("AutoQOnly", "Follow Q If Will Can't Q Only").SetValue(new KeyBind('C', KeyBindType.Press)));
             Misc.AddItem(new MenuItem("AutoY", "Use Youmoo While R").SetValue(true));
             Menu.AddSubMenu(Misc);
 
@@ -322,7 +312,7 @@ namespace HoolaMasterYi
                 var targets = HeroManager.Enemies.Where(x => x.IsValidTarget(Q.Range) && !x.IsZombie);
                 foreach (var target in targets)
                 {
-                    if (target.IsValid && target.Health < Q.GetDamage(target) && (!target.HasBuff("kindrednodeathbuff") || !target.HasBuff("Undying Rage") || !target.HasBuff("JudicatorIntervention")) && (!Orbwalking.InAutoAttackRange(target) || !Orbwalking.CanAttack()))
+                    if (target.IsValid && target.Health < Q.GetDamage(target) && (!target.HasBuff("kindrednodeathbuff") || !target.HasBuff("Undying Rage") || !target.HasBuff("JudicatorIntervention")) && (!Orbwalking.InAutoAttackRange(target) || !Orbwalking.CanAttack))
                         Q.Cast(target);
                 }
             }
@@ -335,7 +325,7 @@ namespace HoolaMasterYi
                         x => x.IsValidTarget(ItemData.Blade_of_the_Ruined_King.Range) && !x.IsZombie);
                 foreach (var target in targets)
                 {
-                    if (target.Health < Damage.GetItemDamage(Player,target,Damage.DamageItems.Bilgewater)) ItemData.Bilgewater_Cutlass.GetItem().Cast(target);
+                    if (target.Health < Damage.GetItemDamage(Player, target, Damage.DamageItems.Bilgewater)) ItemData.Bilgewater_Cutlass.GetItem().Cast(target);
                     if (target.Health < Damage.GetItemDamage(Player, target, Damage.DamageItems.Botrk)) ItemData.Blade_of_the_Ruined_King.GetItem().Cast(target);
                 }
             }
@@ -372,7 +362,7 @@ namespace HoolaMasterYi
             var target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
             if (Q.IsReady() && target.IsValid) Q.Cast(target);
         }
-        
+
         static float getComboDamage(Obj_AI_Base enemy)
         {
             if (enemy != null)
@@ -408,7 +398,7 @@ namespace HoolaMasterYi
                     Indicator.unit = enemy;
                     Indicator.drawDmg(getComboDamage(enemy), new ColorBGRA(255, 204, 0, 160));
                 }
-                
+
 
             }
         }

@@ -224,23 +224,13 @@ namespace HoolaMasterYi
         /// <summary>
         ///     Returns if the player's auto-attack is ready.
         /// </summary>
-        public static bool CanAttack()
-        {
-            return Utils.GameTimeTickCount >= LastAATick + Player.AttackDelay * 1000 && Attack;
-        }
+        public static bool CanAttack => Utils.GameTimeTickCount >= LastAATick + Player.AttackDelay * 1000 && Attack;
 
         /// <summary>
         ///     Returns true if moving won't cancel the auto-attack.
         /// </summary>
-        public static bool CanMove(float extraWindup)
-        {
-            if (!Move)
-            {
-                return false;
-            }
+        public static bool CanMove(double extraWindup) => Move && (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 980 + extraWindup);
 
-            return (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 980 + extraWindup);
-        }
 
 
         public static void SetMinimumOrbwalkDistance(float d)
@@ -328,7 +318,7 @@ namespace HoolaMasterYi
             bool useFixedDistance = true,
             bool randomizeMinDistance = true)
         {
-            if (target.IsValidTarget() && CanAttack() && Attack)
+            if (target.IsValidTarget() && CanAttack && Attack)
             {
                 DisableNextAttack = false;
                 FireBeforeAttack(target);
@@ -687,7 +677,7 @@ namespace HoolaMasterYi
                         result = (from minion in
                                       ObjectManager.Get<Obj_AI_Minion>()
                                           .Where(minion => minion.IsValidTarget() && InAutoAttackRange(minion) &&
-                                          (_config.Item("AttackWards").GetValue<bool>() || !MinionManager.IsWard(minion.CharData.BaseSkinName.ToLower())) &&
+                                          (_config.Item("AttackWards").GetValue<bool>() || !MinionManager.IsWard(minion)) &&
                                           (_config.Item("AttackPetsnTraps").GetValue<bool>() && minion.CharData.BaseSkinName != "jarvanivstandard" || MinionManager.IsMinion(minion, _config.Item("AttackWards").GetValue<bool>())) &&
                                           minion.CharData.BaseSkinName != "gangplankbarrel")
                                   let predHealth =
@@ -713,12 +703,6 @@ namespace HoolaMasterYi
                 try
                 {
                     if (ActiveMode == OrbwalkingMode.None)
-                    {
-                        return;
-                    }
-
-                    //Prevent canceling important spells
-                    if (Player.IsCastingInterruptableSpell(true))
                     {
                         return;
                     }
