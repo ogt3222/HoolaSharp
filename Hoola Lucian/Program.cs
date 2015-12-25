@@ -133,10 +133,10 @@ namespace HoolaLucian
 
             var Draw = new Menu("Draw", "Draw");
             Draw.AddItem(new MenuItem("Dind", "Draw Damage Incidator").SetValue(true));
-            Draw.AddItem(new MenuItem("DEQ", "Draw Extended Q").SetValue(true));
-            Draw.AddItem(new MenuItem("DQ", "Draw Q").SetValue(true));
-            Draw.AddItem(new MenuItem("DW", "Draw W").SetValue(true));
-            Draw.AddItem(new MenuItem("DE", "Draw E").SetValue(true));
+            Draw.AddItem(new MenuItem("DEQ", "Draw Extended Q").SetValue(false));
+            Draw.AddItem(new MenuItem("DQ", "Draw Q").SetValue(false));
+            Draw.AddItem(new MenuItem("DW", "Draw W").SetValue(false));
+            Draw.AddItem(new MenuItem("DE", "Draw E").SetValue(false));
             Menu.AddSubMenu(Draw);
 
             var killsteal = new Menu("killsteal", "Killsteal");

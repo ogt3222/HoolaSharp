@@ -141,7 +141,7 @@ namespace HoolaWukong
 
             Draw.AddItem(new MenuItem("Dind", "Draw Damage Indicator").SetValue(true));
             Draw.AddItem(new MenuItem("DrawAlwaysR", "Draw Always R Status").SetValue(true));
-            Draw.AddItem(new MenuItem("DrawE", "Draw E Range").SetValue(true));
+            Draw.AddItem(new MenuItem("DrawE", "Draw E Range").SetValue(false));
 
             Menu.AddSubMenu(Draw);
 

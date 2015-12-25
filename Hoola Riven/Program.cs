@@ -319,10 +319,10 @@ namespace HoolaRiven
             Draw.AddItem(new MenuItem("DrawTimer2", "Draw R Expiry Time").SetValue(true));
             Draw.AddItem(new MenuItem("DrawUseHoola", "Draw Hoola Logic Status").SetValue(true));
             Draw.AddItem(new MenuItem("Dind", "Draw Damage Indicator").SetValue(true));
-            Draw.AddItem(new MenuItem("DrawCB", "Draw Combo Engage Range").SetValue(true));
-            Draw.AddItem(new MenuItem("DrawBT", "Draw Burst Engage Range").SetValue(true));
-            Draw.AddItem(new MenuItem("DrawFH", "Draw FastHarass Engage Range").SetValue(true));
-            Draw.AddItem(new MenuItem("DrawHS", "Draw Harass Engage Range").SetValue(true));
+            Draw.AddItem(new MenuItem("DrawCB", "Draw Combo Engage Range").SetValue(false));
+            Draw.AddItem(new MenuItem("DrawBT", "Draw Burst Engage Range").SetValue(false));
+            Draw.AddItem(new MenuItem("DrawFH", "Draw FastHarass Engage Range").SetValue(false));
+            Draw.AddItem(new MenuItem("DrawHS", "Draw Harass Engage Range").SetValue(false));
 
             Menu.AddSubMenu(Draw);
 

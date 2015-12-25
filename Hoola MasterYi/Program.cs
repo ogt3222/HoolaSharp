@@ -293,7 +293,7 @@ namespace HoolaMasterYi
 
             var Draw = new Menu("Draw", "Draw");
             Draw.AddItem(new MenuItem("Dind", "Draw Damage Indicator").SetValue(true));
-            Draw.AddItem(new MenuItem("DQ", "Draw Q").SetValue(true));
+            Draw.AddItem(new MenuItem("DQ", "Draw Q").SetValue(false));
             Menu.AddSubMenu(Draw);
 
             var Misc = new Menu("Misc", "Misc");

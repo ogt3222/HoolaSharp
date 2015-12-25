@@ -335,9 +335,9 @@ namespace HoolaTalon
 
             var Draw = new Menu("Draw", "Draw");
             Draw.AddItem(new MenuItem("Dind", "Draw Damage Indicator").SetValue(true));
-            Draw.AddItem(new MenuItem("DW", "Draw W Range").SetValue(true));
-            Draw.AddItem(new MenuItem("DE", "Draw E Range").SetValue(true));
-            Draw.AddItem(new MenuItem("DR", "Draw E W Killsteal Range").SetValue(true));
+            Draw.AddItem(new MenuItem("DW", "Draw W Range").SetValue(false));
+            Draw.AddItem(new MenuItem("DE", "Draw E Range").SetValue(false));
+            Draw.AddItem(new MenuItem("DR", "Draw E W Killsteal Range").SetValue(false));
             Menu.AddSubMenu(Draw);
 
 
